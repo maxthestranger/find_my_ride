@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const blogSchema = new Schema({
+const mongoose = require("mongoose");
+const busSchema = new mongoose.Schema({
     code: String,
     route: String,
     station: String,
@@ -8,4 +8,4 @@ const blogSchema = new Schema({
     time: String,
 });
 
-module.exports = mongoose.model('BusRoute', blogSchema);
+module.exports = mongoose.model('BusRoute', busSchema);

@@ -1,12 +1,15 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const AfricasTalking = require('africastalking')(credentials);
-const mongoose = require('mongoose');
+const mongoose = require('./config/db');
+require('dotenv').config()
 const BusRoute = require('./models/busRoute');
+
+const port = process.env.PORT || 3000;
 
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+mongoose.connect()
 
 app.post('/ussd', async (req, res) => {
     const { sessionId, serviceCode, phoneNumber, text } = req.body;
@@ -59,7 +62,9 @@ app.post('/ussd', async (req, res) => {
                 response = 'CON Here\'s the route info:\n' +
                     `Route: ${busRoute.route}\n` +
                     `Station: ${busRoute.station}\n` +
-                    // ...other details; adapt as needed
+                    `Average Price: ${busRoute.avg_price}\n` +
+                    `Peak Price: ${busRoute.peak_price}\n` +
+                    `Journey Duration: ${busRoute.time}`
 
                     // Trigger SMS
                     sendMessage(phoneNumber, busRoute);
@@ -79,7 +84,7 @@ app.post('/ussd', async (req, res) => {
     res.send(response);
 });
 
-app.post('/new', async (req, res) => {
+app.post('/bus_routes/new', async (req, res) => {
     try {
         // Example assuming data comes in the request body
         const newRouteData = req.body;
@@ -101,7 +106,7 @@ app.post('/new', async (req, res) => {
     }
 });
 
-app.get('/routes', async (req, res) => {
+app.get('/bus_routes', async (req, res) => {
     try {
         const allRoutes = await BusRoute.find();
         res.json(allRoutes);
@@ -109,4 +114,35 @@ app.get('/routes', async (req, res) => {
         console.error('Error fetching routes:', error);
         res.status(500).json({ error: 'An error occurred fetching routes.' });
     }
+});
+
+const credentials = {
+    apiKey: process.env.MyAppAPIkey,
+    username: process.env.MyAppUsername,
+}
+
+const AfricasTalking = require('africastalking')(credentials);
+const sms = AfricasTalking.SMS;
+
+function sendMessage(phoneNumber, busRoute) {
+    const options = {
+        to: [phoneNumber],
+        message: `
+        The bus station for ${busRoute.route} is at ${busRoute.station} which has an average price of ${busRoute.avg_price} and ${busRoute.peak_price} at peak hours. It might take you approximately ${busRoute.time} minutes to arrive at your destination
+        `,
+        from: 'yourSenderId'
+    }
+
+    sms.send(options)
+        .then(response => {
+            console.log('SMS sent:', response);
+        })
+        .catch(error => {
+            console.error('SMS error:', error);
+        });
+}
+
+
+app.listen(port, () => {
+    console.log(`Server listening on port http://localhost:${port}`);
 });
