@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const mongoose = require('./config/db');
+const mongoose = require('mongoose');
 require('dotenv').config()
 const BusRoute = require('./models/busRoute');
 
@@ -9,7 +9,9 @@ const port = process.env.PORT || 3000;
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-mongoose.connect()
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log('Database connected'))
+    .catch(err => console.error('Database connection error:', err));
 
 app.post('/ussd', async (req, res) => {
     const { sessionId, serviceCode, phoneNumber, text } = req.body;
